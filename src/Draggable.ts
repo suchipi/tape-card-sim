@@ -37,4 +37,10 @@ export default function Draggable(geometry: ReturnType<typeof Geometry>) {
   };
   mouse.onUp(onUpHandler);
   onCanvasLeave(onUpHandler);
+
+  return {
+    get isDragging() {
+      return isDragging;
+    },
+  };
 }
