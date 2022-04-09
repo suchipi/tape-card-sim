@@ -10,6 +10,7 @@ import {
 import FPS from "./FPS";
 import Card from "./Card";
 import { CardReaderBack, CardReaderFront } from "./CardReader";
+import { makeSettings } from "./settings";
 
 export default function Root() {
   useType(Root);
@@ -28,6 +29,8 @@ export default function Root() {
     canvas.element.height / 2
   );
 
+  const settings = makeSettings();
+
   const readerBack = useChild(() => CardReaderBack(canvasCenter));
 
   const playheadX = canvasCenter.x + 300;
@@ -37,10 +40,15 @@ export default function Root() {
   const playHeadVec = new Vector(playheadX, playHeadY);
 
   const card = useChild(() =>
-    Card(canvasCenter.addX(600).subtractY(300), cardChannelY, playHeadVec)
+    Card(
+      canvasCenter.addX(600).subtractY(300),
+      cardChannelY,
+      playHeadVec,
+      settings
+    )
   );
 
-  const readerFront = useChild(() => CardReaderFront(canvasCenter));
+  const readerFront = useChild(() => CardReaderFront(canvasCenter, settings));
 
   useChild(() => {
     useDraw((context) => {

@@ -6,7 +6,9 @@ import {
   Vector,
   useDraw,
   useChild,
+  Mouse,
 } from "@hex-engine/2d";
+import { Settings } from "./settings";
 
 const vec = (x: number, y: number) => new Vector(x, y);
 
@@ -42,7 +44,7 @@ export function CardReaderBack(position: Vector) {
   return { geometry };
 }
 
-export function CardReaderFront(position: Vector) {
+export function CardReaderFront(position: Vector, settings: Settings) {
   useType(CardReaderFront);
 
   const { geometry } = useNewComponent(() =>
@@ -50,9 +52,34 @@ export function CardReaderFront(position: Vector) {
   );
 
   // The three little buttons
-  useChild(() => Rect(vec(116, 105), vec(60, 100), "#ea2c3e"));
-  useChild(() => Rect(vec(198, 105), vec(60, 100), "#008ee7"));
-  useChild(() => Rect(vec(280, 105), vec(60, 100), "#00a1b6"));
+
+  const redButton = useChild(() =>
+    Rect(vec(116, 105), vec(60, 100), "#ea2c3e")
+  );
+  const blueButton = useChild(() =>
+    Rect(vec(198, 105), vec(60, 100), "#008ee7")
+  );
+  const greenButton = useChild(() =>
+    Rect(vec(280, 105), vec(60, 100), "#00a1b6")
+  );
+
+  useNewComponent(() =>
+    Mouse({ entity: redButton, geometry: redButton.rootComponent.geometry })
+  ).onClick(() => {
+    settings.feedDirection = -settings.feedDirection;
+  });
+
+  useNewComponent(() =>
+    Mouse({ entity: blueButton, geometry: blueButton.rootComponent.geometry })
+  ).onClick(() => {
+    settings.playbackRate -= 0.05;
+  });
+
+  useNewComponent(() =>
+    Mouse({ entity: greenButton, geometry: greenButton.rootComponent.geometry })
+  ).onClick(() => {
+    settings.playbackRate += 0.05;
+  });
 
   return { geometry };
 }

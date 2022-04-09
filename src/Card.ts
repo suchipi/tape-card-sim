@@ -14,15 +14,17 @@ import {
 import Draggable from "./Draggable";
 import FileInput from "./FileInput";
 import getAudioData from "./getAudioData";
+import { Settings } from "./settings";
 
 export default function Card(
   position: Vector,
   verticalLimit: number,
-  playHead: Vector
+  playHead: Vector,
+  settings: Settings
 ) {
   useType(Card);
 
-  const dimensions = new Vector(400, 200);
+  const dimensions = new Vector(1000, 200);
 
   const geometry = useNewComponent(() =>
     Geometry({
@@ -124,9 +126,9 @@ export default function Card(
 
   let gainNode: GainNode | null = null;
 
-  const feedRateMultiplier = 1;
-
   let velocityX = 0;
+
+  const CLIP_LENGTH = 30;
 
   useUpdate((delta) => {
     writePlayheadOffset(geometry.position, posRelativeToPlayhead);
@@ -137,7 +139,9 @@ export default function Card(
       !draggable.isDragging
     ) {
       geometry.position.x -=
-        feedRateMultiplier * ((delta / (1000 * 5)) * dimensions.x);
+        settings.feedDirection *
+        settings.playbackRate *
+        ((delta / (1000 * CLIP_LENGTH)) * dimensions.x);
     }
 
     let audioContext: AudioContext | null = null;
@@ -177,7 +181,7 @@ export default function Card(
 
     source.start(
       audioContext.currentTime,
-      Math.min(5 * positionAlongTape, audioBuffer.duration),
+      Math.min(CLIP_LENGTH * positionAlongTape, audioBuffer.duration),
       0.3 // TODO need to actually calculate a good value for this
     );
   });
