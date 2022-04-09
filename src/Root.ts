@@ -5,8 +5,9 @@ import {
   Canvas,
   Vector,
 } from "@hex-engine/2d";
-import Card from "./Card";
 import FPS from "./FPS";
+import Card from "./Card";
+import { CardReaderBack, CardReaderFront } from "./CardReader";
 
 export default function Root() {
   useType(Root);
@@ -23,5 +24,14 @@ export default function Root() {
     canvas.element.height / 2
   );
 
-  useChild(() => Card(canvasCenter));
+  const readerBack = useChild(() => CardReaderBack(canvasCenter));
+
+  const card = useChild(() =>
+    Card(
+      canvasCenter.addX(600).subtractY(300),
+      readerBack.rootComponent.geometry.worldPosition().y
+    )
+  );
+
+  const readerFront = useChild(() => CardReaderFront(canvasCenter));
 }

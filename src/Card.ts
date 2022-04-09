@@ -5,10 +5,11 @@ import {
   Polygon,
   Vector,
   useDraw,
+  useUpdate,
 } from "@hex-engine/2d";
 import Draggable from "./Draggable";
 
-export default function Card(position: Vector) {
+export default function Card(position: Vector, verticalLimit: number) {
   useType(Card);
 
   const geometry = useNewComponent(() =>
@@ -19,6 +20,12 @@ export default function Card(position: Vector) {
   );
 
   useNewComponent(() => Draggable(geometry));
+
+  useUpdate(() => {
+    if (geometry.position.y > verticalLimit) {
+      geometry.position.y = verticalLimit;
+    }
+  });
 
   const tapeSection = Polygon.rectangle(geometry.shape.width, 35);
   const tapeBottomOffset = 25;
