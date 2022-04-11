@@ -1,7 +1,4 @@
-export default async function getAudioData(
-  file: File,
-  audioContext: AudioContext
-): Promise<AudioBuffer> {
+async function readFile(file: File): Promise<ArrayBuffer> {
   const reader = new FileReader();
   reader.readAsArrayBuffer(file);
 
@@ -10,6 +7,21 @@ export default async function getAudioData(
     reader.onerror = () => reject(reader.error);
   });
 
-  const audioBuffer = await audioContext.decodeAudioData(result);
-  return audioBuffer;
+  return result;
+}
+
+export default async function getAudioData(
+  file: File,
+  audioContext: AudioContext
+): Promise<{ forward: AudioBuffer; reverse: AudioBuffer }> {
+  const [forward, reverse] = await Promise.all([
+    readFile(file).then((result) => audioContext.decodeAudioData(result)),
+    readFile(file).then((result) => audioContext.decodeAudioData(result)),
+  ]);
+
+  for (let i = 0; i < reverse.numberOfChannels; i++) {
+    Array.prototype.reverse.call(reverse.getChannelData(i));
+  }
+
+  return { forward, reverse };
 }

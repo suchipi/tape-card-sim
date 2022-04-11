@@ -22,7 +22,7 @@ export default function Root() {
 
   useNewComponent(AudioContext);
 
-  // useChild(FPS);
+  useChild(FPS);
 
   const canvasCenter = new Vector(
     canvas.element.width / 2,

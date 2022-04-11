@@ -68,24 +68,12 @@ export default function Card(
     tapeSection.draw(context, "fill");
   });
 
-  let averageDelta = 16;
-  // const last100: Array<number> = [];
-
-  // useUpdate((delta) => {
-  //   last100.push(delta);
-  //   if (last100.length > 100) {
-  //     last100.shift();
-  //   }
-
-  //   averageDelta =
-  //     last100.reduce((prev, curr) => prev + curr, 0) / last100.length;
-  // });
-
   const getAudioContext = useCallbackAsCurrent(() => {
     return useAudioContext();
   });
 
-  let audioBuffer: AudioBuffer | null = null;
+  let forwardAudioBuffer: AudioBuffer | null = null;
+  let reverseAudioBuffer: AudioBuffer | null = null;
 
   mouse.onRightClick(() => {
     fileInput
@@ -102,20 +90,20 @@ export default function Card(
           return;
         }
 
-        return getAudioData(selection, audioContext).then((buffer) => {
-          audioBuffer = buffer;
-          console.log(audioBuffer);
-          cardMessage = "loaded: " + selection.name;
-        });
+        return getAudioData(selection, audioContext).then(
+          ({ forward, reverse }) => {
+            forwardAudioBuffer = forward;
+            reverseAudioBuffer = reverse;
+            console.log(forwardAudioBuffer);
+            cardMessage = "loaded: " + selection.name;
+          }
+        );
       })
       .catch((error: Error) => {
         console.error(error);
         cardMessage = "an unexpected error occurred: " + error.message;
       });
   });
-
-  let source: AudioBufferSourceNode | null = null;
-  const lastPos = geometry.position.clone();
 
   function writePlayheadOffset(inVec: Vector, outVec: Vector) {
     outVec.x = (inVec.x - playHead.x) / (dimensions.x / 2);
@@ -124,14 +112,29 @@ export default function Card(
 
   const posRelativeToPlayhead = new Vector(999, 999);
 
-  let gainNode: GainNode | null = null;
+  const CLIP_LENGTH = 5;
 
-  let velocityX = 0;
+  let audioContext: AudioContext | null = null;
 
-  const CLIP_LENGTH = 30;
+  let source: AudioBufferSourceNode | null = null;
+  function killSource() {
+    if (source != null) {
+      try {
+        source.stop(0);
+        source.disconnect();
+      } catch {}
+      source = null;
+    }
+  }
+
+  const lastPos = geometry.position.clone();
+
+  let lastDirection = 0;
 
   useUpdate((delta) => {
     writePlayheadOffset(geometry.position, posRelativeToPlayhead);
+
+    const nominalDeltaX = (delta / (1000 * CLIP_LENGTH)) * dimensions.x;
 
     if (
       geometry.position.y === verticalLimit &&
@@ -139,50 +142,75 @@ export default function Card(
       !draggable.isDragging
     ) {
       geometry.position.x -=
-        settings.feedDirection *
-        settings.playbackRate *
-        ((delta / (1000 * CLIP_LENGTH)) * dimensions.x);
+        settings.feedDirection * settings.playbackRate * nominalDeltaX;
     }
 
-    let audioContext: AudioContext | null = null;
+    let deltaX = 0;
 
-    try {
-      if (geometry.position.equals(lastPos)) return;
-      velocityX = geometry.position.x - lastPos.x;
-      lastPos.mutateInto(geometry.position);
+    if (geometry.position.equals(lastPos)) return;
+    deltaX = geometry.position.x - lastPos.x;
+    lastPos.mutateInto(geometry.position);
 
-      if (!audioBuffer) return;
+    if (!forwardAudioBuffer) return;
+    if (!reverseAudioBuffer) return;
 
+    if (!audioContext) {
       audioContext = useAudioContext();
-      if (!audioContext) return;
+    }
+    if (!audioContext) return;
 
-      if (!gainNode) {
-        gainNode = audioContext.createGain();
-        gainNode.gain.value = 0.95;
-        gainNode.connect(audioContext.destination);
-      }
+    const isNearPlayhead =
+      Math.abs(posRelativeToPlayhead.x) <= 1 && posRelativeToPlayhead.y >= 0;
 
-      if (Math.abs(posRelativeToPlayhead.x) > 1) return;
-      if (posRelativeToPlayhead.y < 0) return;
-    } finally {
-      if (source) {
-        try {
-          source.stop(0);
-          source.disconnect();
-        } catch (err) {}
-      }
+    if (!isNearPlayhead) {
+      killSource();
+      return;
     }
 
     const positionAlongTape = (-posRelativeToPlayhead.x + 1) / 2;
 
-    source = audioContext.createBufferSource();
-    source.connect(gainNode);
-    source.buffer = audioBuffer;
+    const direction = -Math.sign(deltaX);
+    if (direction === 0) {
+      killSource();
+      return;
+    }
 
-    source.start(
+    if (direction !== lastDirection) {
+      killSource();
+
+      const forwardOffset = Math.min(
+        CLIP_LENGTH * positionAlongTape,
+        forwardAudioBuffer.duration
+      );
+
+      if (direction === 1) {
+        source = new AudioBufferSourceNode(audioContext);
+        source.buffer = forwardAudioBuffer;
+
+        source.connect(audioContext.destination);
+        source.start(audioContext.currentTime, forwardOffset);
+      } else {
+        const reverseOffset = forwardAudioBuffer.duration - forwardOffset;
+
+        source = new AudioBufferSourceNode(audioContext);
+        source.buffer = reverseAudioBuffer;
+
+        source.connect(audioContext.destination);
+        source.start(audioContext.currentTime, reverseOffset);
+      }
+    }
+
+    lastDirection = direction;
+
+    const playbackRate = Math.abs(deltaX / nominalDeltaX);
+
+    if (!source) return;
+
+    source.playbackRate.cancelScheduledValues(audioContext.currentTime);
+    source.playbackRate.setTargetAtTime(
+      playbackRate,
       audioContext.currentTime,
-      Math.min(CLIP_LENGTH * positionAlongTape, audioBuffer.duration),
-      0.3 // TODO need to actually calculate a good value for this
+      0.1
     );
   });
 }

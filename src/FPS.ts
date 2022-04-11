@@ -6,6 +6,7 @@ import {
   useType,
   SystemFont,
 } from "@hex-engine/2d";
+import RollingAverage from "./RollingAverage";
 
 export default function FPS() {
   useType(FPS);
@@ -15,20 +16,15 @@ export default function FPS() {
   );
   const label = useNewComponent(() => Label({ text: "0fps", font }));
 
-  let last10: Array<number> = [];
+  const rollingFps = new RollingAverage(500);
 
   const documentTitle = document.title;
 
   useUpdate((delta) => {
     const fps = 1 / (delta / 1000);
+    rollingFps.addDataPoint(fps);
 
-    last10.unshift(fps);
-    if (last10.length > 10) {
-      last10 = last10.slice(0, 9);
-    }
-
-    const average =
-      last10.reduce((prev, curr) => prev + curr, 0) / last10.length;
+    const average = rollingFps.calculateAverage();
 
     label.text = `${Math.round(average)}fps`;
 
