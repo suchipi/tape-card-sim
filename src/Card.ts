@@ -24,7 +24,8 @@ export default function Card(
 ) {
   useType(Card);
 
-  const dimensions = new Vector(1000, 200);
+  const CLIP_LENGTH = 5;
+  const dimensions = new Vector(CLIP_LENGTH * 200, 300);
 
   const geometry = useNewComponent(() =>
     Geometry({
@@ -112,17 +113,17 @@ export default function Card(
 
   const posRelativeToPlayhead = new Vector(999, 999);
 
-  const CLIP_LENGTH = 5;
-
   let audioContext: AudioContext | null = null;
 
   let source: AudioBufferSourceNode | null = null;
   function killSource() {
     if (source != null) {
       try {
-        source.stop(0);
         source.disconnect();
-      } catch {}
+        source.stop(0);
+      } catch (err) {
+        console.error(err);
+      }
       source = null;
     }
   }
@@ -134,7 +135,7 @@ export default function Card(
   useUpdate((delta) => {
     writePlayheadOffset(geometry.position, posRelativeToPlayhead);
 
-    const nominalDeltaX = (delta / (1000 * CLIP_LENGTH)) * dimensions.x;
+    let nominalDeltaX = (delta / (1000 * CLIP_LENGTH)) * dimensions.x;
 
     if (
       geometry.position.y === verticalLimit &&
@@ -147,7 +148,6 @@ export default function Card(
 
     let deltaX = 0;
 
-    if (geometry.position.equals(lastPos)) return;
     deltaX = geometry.position.x - lastPos.x;
     lastPos.mutateInto(geometry.position);
 
@@ -170,8 +170,10 @@ export default function Card(
     const positionAlongTape = (-posRelativeToPlayhead.x + 1) / 2;
 
     const direction = -Math.sign(deltaX);
+
     if (direction === 0) {
       killSource();
+      lastDirection = direction;
       return;
     }
 
