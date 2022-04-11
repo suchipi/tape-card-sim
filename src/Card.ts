@@ -28,7 +28,7 @@ export default function Card(
   useZIndex(0);
 
   const CLIP_LENGTH = 7;
-  const dimensions = new Vector(CLIP_LENGTH * 200, 300);
+  const dimensions = new Vector(CLIP_LENGTH * 80, 300);
 
   const geometry = useNewComponent(() =>
     Geometry({

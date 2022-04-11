@@ -13,6 +13,7 @@ import Card from "./Card";
 import { CardReaderBack, CardReaderFront } from "./CardReader";
 import { makeSettings } from "./settings";
 import drawOrder from "./drawOrder";
+import useZIndex from "./useZIndex";
 
 export default function Root() {
   useType(Root);
@@ -35,7 +36,9 @@ export default function Root() {
 
   const settings = makeSettings();
 
-  const readerBack = useChild(() => CardReaderBack(canvasCenter));
+  const readerPos = canvasCenter.addY(canvasCenter.y / 2);
+
+  const readerBack = useChild(() => CardReaderBack(readerPos));
 
   const playheadX = canvasCenter.x + 300;
   const cardChannelY = readerBack.rootComponent.geometry.worldPosition().y;
@@ -57,14 +60,16 @@ export default function Root() {
   const card = makeCard();
 
   const readerFront = useChild(() =>
-    CardReaderFront(canvasCenter, settings, makeCard)
+    CardReaderFront(readerPos, settings, makeCard)
   );
 
   useChild(() => {
+    useZIndex(3);
+
     useDraw((context) => {
       context.beginPath();
-      context.moveTo(playheadX, canvasCenter.y - 200);
-      context.lineTo(playheadX, canvasCenter.y);
+      context.moveTo(playheadX, readerPos.y - 300);
+      context.lineTo(playheadX, readerPos.y - 100);
       context.closePath();
 
       context.strokeStyle = "black";
