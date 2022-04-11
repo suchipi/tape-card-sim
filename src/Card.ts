@@ -15,6 +15,7 @@ import Draggable from "./Draggable";
 import FileInput from "./FileInput";
 import getAudioData from "./getAudioData";
 import { Settings } from "./settings";
+import useZIndex from "./useZIndex";
 
 export default function Card(
   position: Vector,
@@ -24,7 +25,9 @@ export default function Card(
 ) {
   useType(Card);
 
-  const CLIP_LENGTH = 5;
+  useZIndex(0);
+
+  const CLIP_LENGTH = 7;
   const dimensions = new Vector(CLIP_LENGTH * 200, 300);
 
   const geometry = useNewComponent(() =>
@@ -58,6 +61,8 @@ export default function Card(
   useDraw((context) => {
     context.fillStyle = "white";
     geometry.shape.draw(context, "fill");
+    context.strokeStyle = "black";
+    geometry.shape.draw(context, "stroke");
 
     font.drawText(context, cardMessage, { x: 10, y: 10 + font.size });
 

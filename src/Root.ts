@@ -6,11 +6,13 @@ import {
   Vector,
   AudioContext,
   useDraw,
+  useCallbackAsCurrent,
 } from "@hex-engine/2d";
 import FPS from "./FPS";
 import Card from "./Card";
 import { CardReaderBack, CardReaderFront } from "./CardReader";
 import { makeSettings } from "./settings";
+import drawOrder from "./drawOrder";
 
 export default function Root() {
   useType(Root);
@@ -19,6 +21,8 @@ export default function Root() {
     Canvas({ backgroundColor: "darkslateblue" })
   );
   canvas.fullscreen({ pixelZoom: 1 });
+
+  useNewComponent(() => Canvas.DrawOrder(drawOrder));
 
   useNewComponent(AudioContext);
 
@@ -39,22 +43,28 @@ export default function Root() {
 
   const playHeadVec = new Vector(playheadX, playHeadY);
 
-  const card = useChild(() =>
-    Card(
-      canvasCenter.addX(600).subtractY(300),
-      cardChannelY,
-      playHeadVec,
-      settings
-    )
-  );
+  const makeCard = useCallbackAsCurrent(() => {
+    return useChild(() =>
+      Card(
+        canvasCenter.addX(600).subtractY(300),
+        cardChannelY,
+        playHeadVec,
+        settings
+      )
+    );
+  });
 
-  const readerFront = useChild(() => CardReaderFront(canvasCenter, settings));
+  const card = makeCard();
+
+  const readerFront = useChild(() =>
+    CardReaderFront(canvasCenter, settings, makeCard)
+  );
 
   useChild(() => {
     useDraw((context) => {
       context.beginPath();
-      context.moveTo(playheadX, 0);
-      context.lineTo(playheadX, canvas.element.height);
+      context.moveTo(playheadX, canvasCenter.y - 200);
+      context.lineTo(playheadX, canvasCenter.y);
       context.closePath();
 
       context.strokeStyle = "black";

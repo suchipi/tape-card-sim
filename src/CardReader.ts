@@ -9,6 +9,7 @@ import {
   Mouse,
 } from "@hex-engine/2d";
 import { Settings } from "./settings";
+import useZIndex from "./useZIndex";
 
 const vec = (x: number, y: number) => new Vector(x, y);
 
@@ -35,6 +36,8 @@ function Rect(position: Vector, size: Vector, color: string) {
 export function CardReaderBack(position: Vector) {
   useType(CardReaderBack);
 
+  useZIndex(-1);
+
   const { geometry } = useNewComponent(() =>
     Rect(position.subtractY(200), vec(1010, 200), "#b8b0a9")
   );
@@ -44,41 +47,66 @@ export function CardReaderBack(position: Vector) {
   return { geometry };
 }
 
-export function CardReaderFront(position: Vector, settings: Settings) {
+export function CardReaderFront(
+  position: Vector,
+  settings: Settings,
+  addCard: () => void
+) {
   useType(CardReaderFront);
+
+  useZIndex(1);
 
   const { geometry } = useNewComponent(() =>
     Rect(position, vec(1024, 400), "#d0c9c3")
   );
 
-  // The three little buttons
+  // The little buttons
+  const addButton = useChild(() => {
+    useZIndex(2);
+    return Rect(vec(34, 105), vec(60, 100), "#bc75ff");
+  });
+  const reverseButton = useChild(() => {
+    useZIndex(2);
+    return Rect(vec(116, 105), vec(60, 100), "#ea2c3e");
+  });
+  const slowButton = useChild(() => {
+    useZIndex(2);
+    return Rect(vec(198, 85), vec(60, 60), "#008ee7");
+  });
+  const fastButton = useChild(() => {
+    useZIndex(2);
+    return Rect(vec(280, 85), vec(60, 60), "#00a1b6");
+  });
+  const resetSpeedButton = useChild(() => {
+    useZIndex(2);
+    return Rect(vec(239, 140), vec(60 + 82, 30), "#ff7139");
+  });
 
-  const redButton = useChild(() =>
-    Rect(vec(116, 105), vec(60, 100), "#ea2c3e")
-  );
-  const blueButton = useChild(() =>
-    Rect(vec(198, 105), vec(60, 100), "#008ee7")
-  );
-  const greenButton = useChild(() =>
-    Rect(vec(280, 105), vec(60, 100), "#00a1b6")
-  );
+  function onClick(button: typeof addButton, handler: () => void) {
+    useNewComponent(() =>
+      Mouse({
+        entity: button,
+        geometry: button.rootComponent.geometry,
+      })
+    ).onClick(handler);
+  }
 
-  useNewComponent(() =>
-    Mouse({ entity: redButton, geometry: redButton.rootComponent.geometry })
-  ).onClick(() => {
+  onClick(addButton, addCard);
+
+  onClick(reverseButton, () => {
     settings.feedDirection = -settings.feedDirection;
   });
 
-  useNewComponent(() =>
-    Mouse({ entity: blueButton, geometry: blueButton.rootComponent.geometry })
-  ).onClick(() => {
+  onClick(slowButton, () => {
     settings.playbackRate -= 0.05;
   });
 
-  useNewComponent(() =>
-    Mouse({ entity: greenButton, geometry: greenButton.rootComponent.geometry })
-  ).onClick(() => {
+  onClick(fastButton, () => {
     settings.playbackRate += 0.05;
+  });
+
+  onClick(resetSpeedButton, () => {
+    settings.playbackRate = 1.0;
   });
 
   return { geometry };
