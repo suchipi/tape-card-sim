@@ -11,9 +11,11 @@ import {
 import FPS from "./FPS";
 import Card from "./Card";
 import { CardReaderBack, CardReaderFront } from "./CardReader";
+import Instructions from "./Instructions";
 import { makeSettings } from "./settings";
 import drawOrder from "./drawOrder";
 import useZIndex from "./useZIndex";
+import Playhead from "./Playhead";
 
 export default function Root() {
   useType(Root);
@@ -63,17 +65,19 @@ export default function Root() {
     CardReaderFront(readerPos, settings, makeCard)
   );
 
-  useChild(() => {
-    useZIndex(3);
+  const playheadLine = useChild(() =>
+    Playhead(
+      new Vector(playheadX, readerPos.y - 300),
+      new Vector(playheadX, readerPos.y - 100)
+    )
+  );
 
-    useDraw((context) => {
-      context.beginPath();
-      context.moveTo(playheadX, readerPos.y - 300);
-      context.lineTo(playheadX, readerPos.y - 100);
-      context.closePath();
+  const instructions = useChild(() => {
+    const textBoxSize = 400;
 
-      context.strokeStyle = "black";
-      context.stroke();
-    });
+    return Instructions(
+      readerPos.subtractY(canvasCenter.y).subtractX(textBoxSize / 2),
+      new Vector(textBoxSize, textBoxSize)
+    );
   });
 }
