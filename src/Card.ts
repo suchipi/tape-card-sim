@@ -16,6 +16,7 @@ import FileInput from "./FileInput";
 import getAudioData from "./getAudioData";
 import { Settings } from "./settings";
 import useZIndex from "./useZIndex";
+import KeyListener from "./KeyListener";
 
 export default function Card(
   position: Vector,
@@ -26,6 +27,51 @@ export default function Card(
   useType(Card);
 
   useZIndex(0);
+
+  const clipSettings = {
+    file: null as File | null,
+    startOffset: 0,
+    length: 7,
+  };
+
+  let cardMessage = "right-click to load an audio file";
+
+  let forwardAudioBuffer: AudioBuffer | null = null;
+  let reverseAudioBuffer: AudioBuffer | null = null;
+
+  async function loadClip(file: File | null) {
+    clipSettings.file = file;
+    if (file == null) return Promise.resolve();
+
+    console.log(clipSettings);
+
+    cardMessage = "opening: " + file.name;
+
+    const audioContext = getAudioContext();
+
+    if (!audioContext) {
+      cardMessage = "failed to load audio: no AudioContext present";
+      return Promise.resolve();
+    }
+
+    try {
+      const { forward, reverse } = await getAudioData(
+        file,
+        [
+          clipSettings.startOffset,
+          clipSettings.startOffset + clipSettings.length,
+        ],
+        audioContext
+      );
+      forwardAudioBuffer = forward;
+      reverseAudioBuffer = reverse;
+      console.log(forwardAudioBuffer);
+      cardMessage = "loaded: " + file.name;
+    } catch (error) {
+      console.error(error);
+      cardMessage = "an unexpected error occurred: " + (error as any).message;
+    }
+  }
 
   const CLIP_LENGTH = 7;
   const dimensions = new Vector(CLIP_LENGTH * 80, 300);
@@ -48,8 +94,6 @@ export default function Card(
   const fileInput = useNewComponent(FileInput);
 
   const mouse = useNewComponent(Mouse);
-
-  let cardMessage = "right-click to load an audio file";
 
   const tapeSection = Polygon.rectangle(geometry.shape.width, 35);
   const tapeBottomOffset = 25;
@@ -78,38 +122,50 @@ export default function Card(
     return useAudioContext();
   });
 
-  let forwardAudioBuffer: AudioBuffer | null = null;
-  let reverseAudioBuffer: AudioBuffer | null = null;
-
   mouse.onRightClick(() => {
-    fileInput
-      .openDialog()
-      .then((selection) => {
-        if (selection == null) return;
-
-        cardMessage = "opening: " + selection.name;
-
-        const audioContext = getAudioContext();
-
-        if (!audioContext) {
-          cardMessage = "failed to load audio: no AudioContext present";
-          return;
-        }
-
-        return getAudioData(selection, audioContext).then(
-          ({ forward, reverse }) => {
-            forwardAudioBuffer = forward;
-            reverseAudioBuffer = reverse;
-            console.log(forwardAudioBuffer);
-            cardMessage = "loaded: " + selection.name;
-          }
-        );
-      })
-      .catch((error: Error) => {
-        console.error(error);
-        cardMessage = "an unexpected error occurred: " + error.message;
-      });
+    fileInput.openDialog().then(loadClip);
   });
+
+  let timeseekLock = false;
+  const HORIZONTAL_TIMESEEK_FACTOR = 1;
+
+  const updateStartOffset = useCallbackAsCurrent(async (delta: number) => {
+    if (timeseekLock || clipSettings.file == null) {
+      return;
+    }
+
+    timeseekLock = true;
+    try {
+      let newOffset = clipSettings.startOffset + delta;
+      if (newOffset < 0) {
+        newOffset = 0;
+      }
+      if (newOffset > clipSettings.length) {
+        newOffset = clipSettings.length;
+      }
+      clipSettings.startOffset = newOffset;
+      console.log(clipSettings);
+      await loadClip(clipSettings.file);
+    } finally {
+      timeseekLock = false;
+    }
+  });
+
+  useNewComponent(() =>
+    KeyListener("ArrowLeft", (isPressed: boolean, wasPressed: boolean) => {
+      if (mouse.isInsideBounds && !isPressed && wasPressed) {
+        updateStartOffset(-HORIZONTAL_TIMESEEK_FACTOR);
+      }
+    })
+  );
+
+  useNewComponent(() =>
+    KeyListener("ArrowRight", (isPressed: boolean, wasPressed: boolean) => {
+      if (mouse.isInsideBounds && !isPressed && wasPressed) {
+        updateStartOffset(HORIZONTAL_TIMESEEK_FACTOR);
+      }
+    })
+  );
 
   function writePlayheadOffset(inVec: Vector, outVec: Vector) {
     outVec.x = (inVec.x - playHead.x) / (dimensions.x / 2);
