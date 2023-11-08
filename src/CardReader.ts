@@ -10,6 +10,7 @@ import {
 } from "@hex-engine/2d";
 import { Settings } from "./settings";
 import useZIndex from "./useZIndex";
+import Button from "./Button";
 
 const vec = (x: number, y: number) => new Vector(x, y);
 
@@ -61,53 +62,68 @@ export function CardReaderFront(
   );
 
   // The little buttons
-  const addButton = useChild(() => {
-    useZIndex(2);
-    return Rect(vec(34, 105), vec(60, 100), "#bc75ff");
-  });
-  const reverseButton = useChild(() => {
-    useZIndex(2);
-    return Rect(vec(116, 105), vec(60, 100), "#ea2c3e");
-  });
-  const slowButton = useChild(() => {
-    useZIndex(2);
-    return Rect(vec(198, 85), vec(60, 60), "#008ee7");
-  });
-  const fastButton = useChild(() => {
-    useZIndex(2);
-    return Rect(vec(280, 85), vec(60, 60), "#00a1b6");
-  });
-  const resetSpeedButton = useChild(() => {
-    useZIndex(2);
-    return Rect(vec(239, 140), vec(60 + 82, 30), "#ff7139");
-  });
+  useChild(() =>
+    Button({
+      position: vec(34, 105),
+      size: vec(60, 100),
+      zIndex: 2,
+      label: "new card",
+      color: "#bc75ff",
+      onClick: addCard,
+    })
+  );
 
-  function onClick(button: typeof addButton, handler: () => void) {
-    useNewComponent(() =>
-      Mouse({
-        entity: button,
-        geometry: button.rootComponent.geometry,
-      })
-    ).onClick(handler);
-  }
+  useChild(() =>
+    Button({
+      position: vec(116, 105),
+      size: vec(60, 100),
+      zIndex: 2,
+      label: "reverse",
+      color: "#ea2c3e",
+      onClick: () => {
+        settings.feedDirection = -settings.feedDirection;
+      },
+    })
+  );
 
-  onClick(addButton, addCard);
+  useChild(() =>
+    Button({
+      position: vec(198, 85),
+      size: vec(60, 60),
+      zIndex: 2,
+      label: "slower",
+      color: "#008ee7",
+      onClick: () => {
+        settings.playbackRate -= 0.05;
+      },
+    })
+  );
 
-  onClick(reverseButton, () => {
-    settings.feedDirection = -settings.feedDirection;
-  });
+  useChild(() =>
+    Button({
+      position: vec(280, 85),
+      size: vec(60, 60),
+      zIndex: 2,
+      label: "faster",
+      color: "#00a1b6",
+      onClick: () => {
+        settings.playbackRate += 0.05;
+      },
+    })
+  );
 
-  onClick(slowButton, () => {
-    settings.playbackRate -= 0.05;
-  });
-
-  onClick(fastButton, () => {
-    settings.playbackRate += 0.05;
-  });
-
-  onClick(resetSpeedButton, () => {
-    settings.playbackRate = 1.0;
-  });
+  useChild(() =>
+    Button({
+      position: vec(239, 140),
+      size: vec(60 + 82, 30),
+      zIndex: 2,
+      label: "reset speed",
+      color: "#ff7139",
+      onClick: () => {
+        settings.playbackRate = 1.0;
+      },
+    })
+  );
 
   return { geometry };
 }

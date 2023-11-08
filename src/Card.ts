@@ -49,7 +49,7 @@ export default function Card(
 
   const mouse = useNewComponent(Mouse);
 
-  let cardMessage = "right-click to load an audio file";
+  let cardMessage = "right-click to load an audio or video file";
 
   const tapeSection = Polygon.rectangle(geometry.shape.width, 35);
   const tapeBottomOffset = 25;
@@ -58,6 +58,8 @@ export default function Card(
     SystemFont({ name: "sans-serif", size: 14, color: "black" })
   );
 
+  let loaded = false;
+
   useDraw((context) => {
     context.fillStyle = "white";
     geometry.shape.draw(context, "fill");
@@ -65,6 +67,13 @@ export default function Card(
     geometry.shape.draw(context, "stroke");
 
     font.drawText(context, cardMessage, { x: 10, y: 10 + font.size });
+
+    if (loaded) {
+      font.drawText(context, "drag this card down into the card reader!", {
+        x: 10,
+        y: 10 + font.size * 3,
+      });
+    }
 
     context.fillStyle = "#111";
     context.translate(
@@ -100,8 +109,9 @@ export default function Card(
           ({ forward, reverse }) => {
             forwardAudioBuffer = forward;
             reverseAudioBuffer = reverse;
+            loaded = true;
             console.log(forwardAudioBuffer);
-            cardMessage = "loaded: " + selection.name;
+            cardMessage = "loaded: first 7 seconds of " + selection.name;
           }
         );
       })
