@@ -18,6 +18,8 @@ export default function Button({
   zIndex,
   label,
   onClick,
+  onDown,
+  onUp,
 }: {
   position: Vector;
   color: string;
@@ -25,6 +27,8 @@ export default function Button({
   zIndex: number;
   label?: string;
   onClick?: () => void;
+  onDown?: () => void;
+  onUp?: () => void;
 }) {
   useType(Button);
 
@@ -37,10 +41,29 @@ export default function Button({
     })
   );
 
-  const mouse = useNewComponent(Mouse);
+  const mouse = useNewComponent(() => Mouse({ geometry }));
 
   if (onClick) {
     mouse.onClick(onClick);
+  }
+
+  // TODO: Feels weird that we have to specify isInsideBounds with non-lowlevel-mouse...
+  let wasDown = false;
+  if (onDown) {
+    mouse.onDown(() => {
+      if (mouse.isInsideBounds) {
+        wasDown = true;
+        onDown();
+      }
+    });
+  }
+  if (onUp) {
+    mouse.onUp(() => {
+      if (wasDown) {
+        onUp();
+        wasDown = false;
+      }
+    });
   }
 
   useDraw((context) => {

@@ -75,12 +75,28 @@ export function CardReaderFront(
 
   useChild(() =>
     Button({
-      position: vec(116, 105),
-      size: vec(60, 100),
+      position: vec(116, 77.5),
+      size: vec(60, 45),
       zIndex: 2,
-      label: "reverse",
+      label: "reverse toggle",
       color: "#ea2c3e",
       onClick: () => {
+        settings.feedDirection = -settings.feedDirection;
+      },
+    })
+  );
+
+  useChild(() =>
+    Button({
+      position: vec(116, 132.5),
+      size: vec(60, 45),
+      zIndex: 2,
+      label: "reverse hold",
+      color: "#a11522",
+      onDown: () => {
+        settings.feedDirection = -settings.feedDirection;
+      },
+      onUp: () => {
         settings.feedDirection = -settings.feedDirection;
       },
     })
