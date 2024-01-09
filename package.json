@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "dependencies": {
-    "@hex-engine/2d": "^0.9.1",
+    "@hex-engine/2d": "^0.9.2",
     "@suchipi/defer": "^1.0.0"
   },
   "scripts": {
@@ -13,7 +13,7 @@
     "test": "hex-engine-scripts test"
   },
   "devDependencies": {
-    "hex-engine-scripts": "^0.9.1",
-    "typescript": "^3.9.2"
+    "hex-engine-scripts": "^0.9.2",
+    "typescript": "^4.9.5"
   }
 }
