@@ -27,7 +27,10 @@ export default function Card(
 
   useZIndex(0);
 
-  const CLIP_LENGTH = 7;
+  console.log(
+    "Use eg 'localStorage.CLIP_LENGTH = 9' to change card length to 9 seconds"
+  );
+  const CLIP_LENGTH = parseInt(localStorage.CLIP_LENGTH) || 7;
   const dimensions = new Vector(CLIP_LENGTH * 80, 300);
 
   const geometry = useNewComponent(() =>
@@ -111,7 +114,7 @@ export default function Card(
             reverseAudioBuffer = reverse;
             loaded = true;
             console.log(forwardAudioBuffer);
-            cardMessage = "loaded: first 7 seconds of " + selection.name;
+            cardMessage = `loaded: first ${CLIP_LENGTH} seconds of ${selection.name}`;
           }
         );
       })
